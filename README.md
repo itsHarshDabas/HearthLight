@@ -1,4 +1,6 @@
-# Local AI Gateway + Android chat app
+# HearthLight 🦎
+
+Your own AI, running at home: a local AI gateway plus an Android chat app.
 
 Use the models on your own PC (LM Studio for chat, ComfyUI for images) from your phone or
 any web app, through **one authenticated, OpenAI-compatible API**.
