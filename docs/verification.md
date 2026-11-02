@@ -12,7 +12,7 @@ servers that speak the same HTTP APIs, over real sockets:
   fallback to a second upstream, default model selection, CORS allow-list.
 - Image jobs end to end: parameter injection into the graph (prompt, size rounding, steps clamp, seed),
   batch `n`, sequential `n` for workflows without batch, ComfyUI validation errors and execution errors
-  surfaced, cancel while queued and while running, delete, signed URLs (valid, tampered, expired path),
+  surfaced, cancel while queued and while running, delete, signed URLs (valid and tampered),
   OpenAI `/v1/images/generations` with `url` and `b64_json`, and **jobs resuming after a gateway restart**.
 - Workflow auto-detection on the bundled SDXL and Flux graphs, placeholders, meta files, UI-format rejection.
 
