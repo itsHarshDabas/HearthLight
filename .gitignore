@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+gateway/config.toml
+gateway/data/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+*.keystore
+*.jks
+
+# OS
+.DS_Store
+Thumbs.db

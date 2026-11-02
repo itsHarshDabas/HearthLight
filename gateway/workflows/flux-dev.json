@@ -1,0 +1,49 @@
+{
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {"text": "a red fox reading a newspaper in a cafe", "clip": ["30", 1]},
+    "_meta": {"title": "CLIP Text Encode (Positive Prompt)"}
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {"samples": ["13", 0], "vae": ["30", 2]},
+    "_meta": {"title": "VAE Decode"}
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": {"filename_prefix": "gateway-flux", "images": ["8", 0]},
+    "_meta": {"title": "Save Image"}
+  },
+  "13": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {"noise": ["25", 0], "guider": ["22", 0], "sampler": ["16", 0], "sigmas": ["17", 0], "latent_image": ["27", 0]},
+    "_meta": {"title": "SamplerCustomAdvanced"}
+  },
+  "16": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "euler"}, "_meta": {"title": "KSamplerSelect"}},
+  "17": {
+    "class_type": "BasicScheduler",
+    "inputs": {"scheduler": "simple", "steps": 20, "denoise": 1, "model": ["30", 0]},
+    "_meta": {"title": "BasicScheduler"}
+  },
+  "22": {
+    "class_type": "BasicGuider",
+    "inputs": {"model": ["30", 0], "conditioning": ["26", 0]},
+    "_meta": {"title": "BasicGuider"}
+  },
+  "25": {"class_type": "RandomNoise", "inputs": {"noise_seed": 7}, "_meta": {"title": "RandomNoise"}},
+  "26": {
+    "class_type": "FluxGuidance",
+    "inputs": {"guidance": 3.5, "conditioning": ["6", 0]},
+    "_meta": {"title": "FluxGuidance"}
+  },
+  "27": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": {"width": 1024, "height": 1024, "batch_size": 1},
+    "_meta": {"title": "EmptySD3LatentImage"}
+  },
+  "30": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {"ckpt_name": "flux1-dev-fp8.safetensors"},
+    "_meta": {"title": "Load Checkpoint"}
+  }
+}

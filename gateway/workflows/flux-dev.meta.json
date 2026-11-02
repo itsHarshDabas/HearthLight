@@ -1,0 +1,4 @@
+{
+  "title": "Flux dev (fp8 checkpoint)",
+  "description": "Flux.1 dev using the all-in-one fp8 checkpoint. No negative prompt; ~20 steps."
+}

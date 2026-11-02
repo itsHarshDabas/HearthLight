@@ -1,0 +1,5 @@
+{
+  "title": "SDXL (basic)",
+  "description": "Plain SDXL text-to-image. Change ckpt_name in sdxl-basic.json to a checkpoint you have, or pass \"checkpoint\" per request.",
+  "defaults": {"negative_prompt": "blurry, low quality, watermark, text"}
+}

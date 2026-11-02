@@ -1,0 +1,48 @@
+# Copy to config.toml and edit. Every setting is optional.
+
+[server]
+# Keep 127.0.0.1 and reach the gateway through Tailscale Serve or Cloudflare Tunnel
+# (docs/remote-access.md). Only use 0.0.0.0 if you know why.
+host = "127.0.0.1"
+port = 8787
+# Set this if image URLs come out with the wrong host, e.g. "https://my-pc.tail1234.ts.net"
+public_base_url = ""
+# Browser apps on other origins that may call the API, e.g. ["http://localhost:5173"]
+cors_origins = []
+# Interactive API docs at /docs
+enable_docs = true
+
+[auth]
+# Leave empty to auto-generate one key into data/api_key.txt (print it with --show-key).
+# Generate keys with:  local-ai-gateway --new-key
+# One key per device/app makes it easy to revoke one later.
+api_keys = []
+
+[chat]
+# Used when a request has no "model". Empty = first non-embedding model the upstream lists.
+default_model = ""
+
+# OpenAI-compatible upstreams, tried in this order. The first one that serves the
+# requested model wins; if it is unreachable the next one serving the same model is used
+# (this is where a cloud fallback would go later).
+[[chat.upstreams]]
+name = "lmstudio"
+base_url = "http://127.0.0.1:1234/v1"
+api_key = ""          # LM Studio ignores it; set it for hosted providers
+timeout = 600         # seconds to wait for the next token / response
+
+# [[chat.upstreams]]
+# name = "ollama"
+# base_url = "http://127.0.0.1:11434/v1"
+
+[comfyui]
+enabled = true
+base_url = "http://127.0.0.1:8188"
+workflows_dir = "workflows"     # API-format workflow exports (docs/workflows.md)
+max_concurrent_jobs = 1         # jobs sent to ComfyUI at once (ComfyUI renders one at a time anyway)
+job_timeout = 1800              # seconds before a job is failed and interrupted
+poll_interval = 1.0
+
+[storage]
+data_dir = "data"               # SQLite job history + generated images
+file_url_ttl_days = 2           # signed image links stay valid this long
