@@ -22,8 +22,7 @@ the Kotlin client against the real gateway process: streamed chat and a 2-image 
 
 ## Not yet verified
 
-- **The Android UI module** couldn't be compiled in the sandbox (Google's Maven repo was blocked). CI on GitHub
-  builds it; the first CI run is the real compile check.
+- **The Android UI on a real phone.** It compiles and the debug APK builds in CI, but nobody has tapped through it on a device yet.
 - **Real LM Studio / ComfyUI.** The fakes follow their documented APIs (`/v1/*`, `/prompt`, `/history/{id}`,
   `/queue`, `/view`, `/interrupt`, `/system_stats`), but behaviour on your actual versions, custom nodes and
   GPU hasn't been observed.
