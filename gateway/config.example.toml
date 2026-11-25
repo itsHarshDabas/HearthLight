@@ -43,6 +43,28 @@ max_concurrent_jobs = 1         # jobs sent to ComfyUI at once (ComfyUI renders 
 job_timeout = 1800              # seconds before a job is failed and interrupted
 poll_interval = 1.0
 
+[audio]
+# Speech-to-text for voice notes sent from the app.
+#   auto           = local Whisper if installed (pip install -e ".[audio]"), else upstream_url if set, else off
+#   faster-whisper = local Whisper in the gateway (GPU if CUDA works, otherwise CPU)
+#   openai         = forward to an OpenAI-compatible /audio/transcriptions server (whisper.cpp server, speaches...)
+#   off            = disabled; the app tells you transcription isn't available
+backend = "auto"
+model = "base"                  # faster-whisper size: tiny, base, small, medium, large-v3, turbo (bigger = better, slower)
+device = "auto"                 # auto | cpu | cuda
+compute_type = "default"        # int8 is fastest on CPU; float16 on an NVIDIA GPU
+language = ""                   # "" = auto-detect, or e.g. "en", "hi"
+upstream_url = ""               # backend "openai" only, e.g. "http://127.0.0.1:8080/v1"
+upstream_model = "whisper-1"
+upstream_api_key = ""
+max_upload_mb = 25
+
+[attachments]
+# Documents (PDF, DOCX, PPTX, text/code) are turned into text for the prompt.
+# Images are passed to the model as-is: load a vision model in LM Studio to use them.
+max_upload_mb = 25
+max_text_chars = 200000
+
 [storage]
 data_dir = "data"               # SQLite job history + generated images
 file_url_ttl_days = 2           # signed image links stay valid this long

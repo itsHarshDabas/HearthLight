@@ -2,9 +2,11 @@
 
 ## Install
 
-Every push to GitHub builds a debug APK in **Actions → CI → latest run → Artifacts →
-`local-ai-chat-debug-apk`**. Download it on the phone (unzip if needed), open it, and allow
-"install unknown apps" for your browser/file manager when Android asks.
+Download the latest APK from the repo's **Releases** page (`HearthLight-<version>.apk`), open it
+on the phone, and allow "install unknown apps" for your browser/file manager when Android asks.
+Installing a newer APK over an older one keeps your chats and settings.
+
+Every push also builds a debug APK in **Actions → CI → latest run → Artifacts → `local-ai-chat-debug-apk`**.
 
 Or build it yourself: open the `android/` folder in Android Studio and press Run, or
 `cd android && ./gradlew :app:assembleDebug` (needs the Android SDK; output in `app/build/outputs/apk/debug/`).
@@ -24,6 +26,9 @@ The app opens on **Settings**:
   Reasoning models (`reasoning_content` or `<think>` tags) show a collapsible "Thinking" section.
 - **Model picker** in the title bar lists the models LM Studio offers. The choice is remembered per chat.
 - **History:** chats are saved on the phone (drawer → Recent). Delete with the bin icon.
+- **Attachments:** tap **+** for Camera, Photos, Files, Record audio or Audio file, or the mic to record a voice note.
+  Photos go to vision models, documents (PDF, Word, PowerPoint, text, code) become text, voice notes are transcribed
+  on your PC. See [attachments.md](attachments.md).
 - **System prompt and temperature** in Settings.
 - **Images:** pick a workflow, describe the image, choose Square/Portrait/Landscape, optionally steps/seed/count.
   Jobs run on the PC, so you can close the app and come back. Tap an image to save it to *Pictures/LocalAI*, share it, reuse its prompt or delete it.
@@ -31,4 +36,5 @@ The app opens on **Settings**:
 ## Notes
 
 - The app allows plain `http://` so a raw Tailscale IP works (Tailscale encrypts it). It warns you if you enter an `http://` address that isn't private.
-- Not yet: sending images to vision models, img2img, voice. The gateway API already passes multimodal chat messages through, so vision is mostly app work.
+- Voice notes need speech-to-text on the PC: see [attachments.md](attachments.md#setting-up-speech-to-text-whisper).
+- Not yet: img2img, spoken replies (text-to-speech).

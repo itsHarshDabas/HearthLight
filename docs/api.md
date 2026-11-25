@@ -51,6 +51,28 @@ while (true) {
 
 Stopping a stream (closing the connection) stops generation in LM Studio too.
 
+## Attachments
+
+Images need nothing special: send OpenAI-style content parts and they pass through to LM Studio
+(load a vision model):
+
+```json
+{"role": "user", "content": [
+  {"type": "text", "text": "What's in this photo?"},
+  {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}]}
+```
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/v1/audio/transcriptions` | OpenAI-compatible speech-to-text. Multipart `file` (+ optional `language`, `prompt`, `response_format=text`). Returns `{"text", "language", "duration"}`. `501` with code `transcription_unavailable` when Whisper isn't set up ([attachments.md](attachments.md)). |
+| POST | `/v1/attachments/extract` | Multipart `file`. Returns `{"text", "kind": "text"\|"pdf"\|"docx"\|"pptx", "pages", "truncated"}`. `415` for unsupported binaries, `422` for PDFs without a text layer. |
+
+```bash
+curl -H "Authorization: Bearer $KEY" -F file=@note.m4a https://my-pc.tail1234.ts.net/v1/audio/transcriptions
+```
+
+The OpenAI Python SDK works too: `client.audio.transcriptions.create(model="whisper-1", file=open("note.m4a", "rb"))`.
+
 ## Images
 
 ### Workflows

@@ -14,6 +14,8 @@ class AppContainer(context: Context) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val settings = SettingsStore(context)
     val conversations = ConversationStore(File(context.filesDir, "conversations"))
+    val attachments = AttachmentRepository(context)
+    val recorder = AudioRecorder(context)
     private val http = GatewayClient.defaultHttpClient()
 
     @Volatile

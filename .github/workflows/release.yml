@@ -1,0 +1,66 @@
+name: Release APK
+
+# Push a tag like v0.2.0 (or run it by hand from the Actions tab) to build the app
+# and publish a GitHub Release with the APK attached.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Gateway tests
+        working-directory: gateway
+        run: pip install -e ".[dev]" && pytest -q
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Fixed signing key (optional)
+        env:
+          KEYSTORE_B64: ${{ secrets.HEARTHLIGHT_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/sideload.jks"
+            echo "HEARTHLIGHT_KEYSTORE=$RUNNER_TEMP/sideload.jks" >> "$GITHUB_ENV"
+            echo "Signing with the fixed HearthLight key"
+          else
+            echo "No HEARTHLIGHT_KEYSTORE_BASE64 secret: signing with a debug key"
+          fi
+      - name: Core client tests
+        working-directory: android/core
+        run: ../gradlew test --no-daemon
+      - name: Build release APK
+        working-directory: android
+        env:
+          HEARTHLIGHT_KEYSTORE_PASSWORD: ${{ secrets.HEARTHLIGHT_KEYSTORE_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --no-daemon
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/*.apk "dist/HearthLight-${TAG}.apk"
+          git archive --format=zip --prefix=gateway/ -o "dist/HearthLight-gateway-${TAG}.zip" HEAD:gateway
+          sha256sum dist/* | tee dist/SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: HearthLight ${{ env.TAG }}
+          body_path: android/RELEASE_NOTES.md
+          files: dist/*
+          make_latest: true

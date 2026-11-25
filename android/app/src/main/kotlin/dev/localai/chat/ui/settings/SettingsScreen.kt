@@ -131,7 +131,7 @@ fun SettingsScreen(container: AppContainer, onOpenDrawer: () -> Unit, onSaved: (
                             try {
                                 val st = GatewayClient(url, key).status()
                                 testOk = true
-                                testResult = describe(st.version, st.chatUpstreams.map { "${it.name}: ${it.status}" }, st.comfyui)
+                                testResult = describe(st.version, st.chatUpstreams.map { "${it.name}: ${it.status}" }, st.comfyui, st.audio)
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
@@ -196,7 +196,7 @@ fun SettingsScreen(container: AppContainer, onOpenDrawer: () -> Unit, onSaved: (
     }
 }
 
-private fun describe(version: String, upstreams: List<String>, comfy: JsonObject): String {
+private fun describe(version: String, upstreams: List<String>, comfy: JsonObject, audio: dev.localai.core.AudioStatus?): String {
     val sb = StringBuilder("Connected to gateway $version\n")
     upstreams.forEach { sb.append("• Chat ").append(it).append('\n') }
     val comfyStatus = (comfy["status"] as? JsonPrimitive)?.content
@@ -207,6 +207,12 @@ private fun describe(version: String, upstreams: List<String>, comfy: JsonObject
         sb.append("• ComfyUI: ").append(comfyStatus ?: "unknown")
         val gpu = ((comfy["devices"] as? JsonArray)?.firstOrNull() as? JsonObject)?.get("name") as? JsonPrimitive
         gpu?.let { sb.append(" (").append(it.content).append(')') }
+    }
+    sb.append('\n')
+    when {
+        audio == null -> sb.append("• Attachments: update the gateway on your PC to send documents and voice notes")
+        audio.enabled -> sb.append("• Voice notes: on (").append(audio.backend).append(')')
+        else -> sb.append("• Voice notes: off. On the PC run pip install -e \".[audio]\" in the gateway folder")
     }
     return sb.toString().trim()
 }
