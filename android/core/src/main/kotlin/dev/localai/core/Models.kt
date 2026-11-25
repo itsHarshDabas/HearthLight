@@ -3,7 +3,12 @@ package dev.localai.core
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 val GatewayJson = Json {
     ignoreUnknownKeys = true
@@ -14,8 +19,35 @@ val GatewayJson = Json {
 
 // ---------------------------------------------------------------- chat
 
+/**
+ * One chat message. [content] is either a plain string or, for multimodal messages,
+ * an array of OpenAI content parts (`text` / `image_url`).
+ */
 @Serializable
-data class ChatMessage(val role: String, val content: String)
+data class ChatMessage(val role: String, val content: JsonElement) {
+    constructor(role: String, text: String) : this(role, JsonPrimitive(text))
+
+    companion object {
+        fun withParts(role: String, parts: List<ContentPart>): ChatMessage =
+            ChatMessage(role, JsonArray(parts.map { it.toJson() }))
+    }
+}
+
+sealed interface ContentPart {
+    fun toJson(): JsonObject
+
+    data class Text(val text: String) : ContentPart {
+        override fun toJson() = buildJsonObject { put("type", "text"); put("text", text) }
+    }
+
+    /** [url] is an http(s) URL or a `data:image/jpeg;base64,...` URL. */
+    data class ImageUrl(val url: String) : ContentPart {
+        override fun toJson() = buildJsonObject {
+            put("type", "image_url")
+            put("image_url", buildJsonObject { put("url", url) })
+        }
+    }
+}
 
 @Serializable
 data class ChatRequest(
@@ -50,10 +82,29 @@ sealed interface ChatEvent {
 data class UpstreamStatus(val name: String, val status: String)
 
 @Serializable
+data class AudioStatus(val enabled: Boolean = false, val backend: String = "off", val hint: String? = null)
+
+@Serializable
 data class StatusResponse(
     val version: String = "",
     @SerialName("chat_upstreams") val chatUpstreams: List<UpstreamStatus> = emptyList(),
     val comfyui: JsonObject = JsonObject(emptyMap()),
+    val audio: AudioStatus? = null, // null = gateway older than 0.2 (no attachments support)
+)
+
+// ---------------------------------------------------------------- attachments
+
+@Serializable
+data class Transcription(val text: String, val language: String? = null, val duration: Double? = null)
+
+@Serializable
+data class ExtractedText(
+    val filename: String = "",
+    val kind: String = "text",
+    val text: String,
+    val chars: Int = 0,
+    val truncated: Boolean = false,
+    val pages: Int? = null,
 )
 
 // ---------------------------------------------------------------- images

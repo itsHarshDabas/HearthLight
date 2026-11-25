@@ -15,6 +15,8 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -86,6 +88,28 @@ class GatewayClient(
             }
         })
         awaitClose { call.cancel() }
+    }
+
+    // ------------------------------------------------------------------ attachments
+
+    /**
+     * Speech-to-text on the gateway (Whisper). Throws [GatewayException] with status 501 when
+     * transcription isn't set up on the PC, or 404 when the gateway predates attachments.
+     */
+    suspend fun transcribe(audio: ByteArray, filename: String, mimeType: String = "audio/mp4", language: String? = null): Transcription {
+        val form = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("file", filename, audio.toRequestBody(mimeType.toMediaTypeOrNull()))
+            .addFormDataPart("model", "whisper-1")
+        if (!language.isNullOrBlank()) form.addFormDataPart("language", language)
+        return parse(execute(builder("/v1/audio/transcriptions").post(form.build()).build()), Transcription.serializer())
+    }
+
+    /** Text from a document (PDF, DOCX, PPTX, text/code), extracted on the gateway. */
+    suspend fun extractText(data: ByteArray, filename: String, mimeType: String = "application/octet-stream"): ExtractedText {
+        val form = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("file", filename, data.toRequestBody(mimeType.toMediaTypeOrNull()))
+            .build()
+        return parse(execute(builder("/v1/attachments/extract").post(form).build()), ExtractedText.serializer())
     }
 
     // ------------------------------------------------------------------ images
@@ -176,6 +200,7 @@ class GatewayClient(
             }.getOrNull() ?: body.take(300).ifBlank { "HTTP $code" }
             val hint = when (code) {
                 401 -> " (check the API key in Settings)"
+                404 -> if (msg.trim('"') == "Not Found") " (this gateway is too old for this feature: update it on your PC)" else ""
                 502, 503 -> " (is LM Studio / ComfyUI running on the PC?)"
                 else -> ""
             }

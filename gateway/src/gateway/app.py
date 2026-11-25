@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -10,12 +11,13 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import __version__
+from .attachments import AttachmentError, Transcriber, extract_text
 from .comfy import ComfyClient
 from .config import Settings, prepare_runtime
 from .jobs import FINAL, SUCCEEDED, Job, JobDB, JobManager
@@ -67,6 +69,7 @@ def create_app(settings: Settings) -> FastAPI:
         app.state.http = httpx.AsyncClient(timeout=httpx.Timeout(30.0, read=None), limits=limits)
         app.state.router = ChatRouter(settings.chat_upstreams, app.state.http)
         app.state.workflows = WorkflowStore(settings.comfyui.workflows_dir)
+        app.state.transcriber = Transcriber(settings.audio, app.state.http)
         app.state.comfy = ComfyClient(settings.comfyui.base_url, app.state.http)
         app.state.db = JobDB(settings.db_path)
         app.state.jobs = JobManager(
@@ -128,6 +131,8 @@ def create_app(settings: Settings) -> FastAPI:
             "version": __version__,
             "chat_upstreams": [{"name": u.name, "status": router.last_status.get(u.name, "unknown")} for u in router.upstreams],
             "comfyui": comfy_info,
+            "audio": request.app.state.transcriber.info(),
+            "attachments": {"images": "passthrough (needs a vision model)", "documents": ["text", "pdf", "docx", "pptx"]},
             "jobs": {"queued": db.count("queued"), "running": db.count("running")},
             "workflow_errors": request.app.state.workflows.errors,
         }
@@ -217,6 +222,45 @@ def create_app(settings: Settings) -> FastAPI:
         body = await _json_body(request)
         body.pop("stream", None)
         return await _proxy_json(request, "/embeddings", body)
+
+    # ------------------------------------------------------------------ attachments
+    async def _read_upload(file: UploadFile, limit_mb: int) -> bytes:
+        limit = limit_mb * 1024 * 1024
+        data = await file.read(limit + 1)
+        if len(data) > limit:
+            raise openai_error(413, f"file is larger than {limit_mb} MB")
+        return data
+
+    @app.post("/v1/audio/transcriptions", dependencies=auth)
+    async def audio_transcriptions(
+        request: Request,
+        file: UploadFile = File(...),
+        model: str | None = Form(None),  # accepted for OpenAI compatibility; the gateway's config picks the model
+        language: str | None = Form(None),
+        prompt: str | None = Form(None),
+        response_format: str | None = Form(None),
+    ):
+        """OpenAI-compatible speech-to-text (Whisper)."""
+        data = await _read_upload(file, settings.audio.max_upload_mb)
+        try:
+            result = await request.app.state.transcriber.transcribe(data, file.filename or "audio", language, prompt)
+        except AttachmentError as e:
+            raise openai_error(e.status, str(e), "audio_error",
+                               "transcription_unavailable" if e.status == 501 else None) from e
+        if response_format == "text":
+            return Response(result["text"], media_type="text/plain; charset=utf-8")
+        return result
+
+    @app.post("/v1/attachments/extract", dependencies=auth)
+    async def extract_attachment(file: UploadFile = File(...)):
+        """Pulls the text out of a document (PDF, DOCX, PPTX, text/code) so it can go into a prompt."""
+        data = await _read_upload(file, settings.attachments.max_upload_mb)
+        name = file.filename or "file"
+        try:
+            ex = await asyncio.to_thread(extract_text, name, file.content_type, data, settings.attachments.max_text_chars)
+        except AttachmentError as e:
+            raise openai_error(e.status, str(e), "attachment_error") from e
+        return ex.public(name)
 
     # ------------------------------------------------------------------ images
     def _require_comfy() -> None:

@@ -40,6 +40,25 @@ class ComfyConfig:
 
 
 @dataclass
+class AudioConfig:
+    backend: str = "auto"          # auto | faster-whisper | openai | off
+    model: str = "base"            # faster-whisper model: tiny, base, small, medium, large-v3, turbo...
+    device: str = "auto"           # auto | cpu | cuda
+    compute_type: str = "default"  # default | int8 | float16 | int8_float16
+    language: str = ""             # empty = auto-detect
+    upstream_url: str = ""         # for backend "openai", e.g. http://127.0.0.1:8080/v1 (include /v1)
+    upstream_model: str = "whisper-1"
+    upstream_api_key: str = ""
+    max_upload_mb: int = 25
+
+
+@dataclass
+class AttachmentConfig:
+    max_upload_mb: int = 25
+    max_text_chars: int = 200_000  # extracted document text is cut here
+
+
+@dataclass
 class Settings:
     host: str = "127.0.0.1"
     port: int = 8787
@@ -51,6 +70,8 @@ class Settings:
     data_dir: Path = Path("data")
     chat_upstreams: list[ChatUpstream] = field(default_factory=list)
     comfyui: ComfyConfig = field(default_factory=ComfyConfig)
+    audio: AudioConfig = field(default_factory=AudioConfig)
+    attachments: AttachmentConfig = field(default_factory=AttachmentConfig)
     file_url_ttl_days: int = 2
     # Resolved at startup
     signing_secret: bytes = b""
@@ -102,6 +123,8 @@ def load_settings(config_path: str | os.PathLike | None = None, *, env: dict | N
     s.chat_upstreams = [ChatUpstream(**u) for u in ups]
 
     s.comfyui = ComfyConfig(**comfy) if comfy else ComfyConfig()
+    s.audio = AudioConfig(**raw.get("audio", {}))
+    s.attachments = AttachmentConfig(**raw.get("attachments", {}))
 
     # --- environment overrides -------------------------------------------
     if "GATEWAY_HOST" in env:
@@ -120,6 +143,12 @@ def load_settings(config_path: str | os.PathLike | None = None, *, env: dict | N
         s.chat_upstreams[0].base_url = env["GATEWAY_LMSTUDIO_URL"].rstrip("/")
     if "GATEWAY_COMFYUI_URL" in env:
         s.comfyui.base_url = env["GATEWAY_COMFYUI_URL"].rstrip("/")
+    if "GATEWAY_AUDIO_BACKEND" in env:
+        s.audio.backend = env["GATEWAY_AUDIO_BACKEND"]
+    if "GATEWAY_AUDIO_URL" in env:
+        s.audio.upstream_url = env["GATEWAY_AUDIO_URL"].rstrip("/")
+    if "GATEWAY_WHISPER_MODEL" in env:
+        s.audio.model = env["GATEWAY_WHISPER_MODEL"]
     if "GATEWAY_DEFAULT_MODEL" in env:
         s.default_model = env["GATEWAY_DEFAULT_MODEL"]
 

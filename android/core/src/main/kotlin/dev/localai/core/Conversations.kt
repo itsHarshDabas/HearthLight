@@ -11,11 +11,37 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import java.util.UUID
 
+/**
+ * A file attached to a user message. Images keep a local (downscaled JPEG) copy that is sent
+ * to vision models; documents and voice notes are kept as text (extracted / transcribed).
+ */
+@Serializable
+data class Attachment(
+    val id: String = UUID.randomUUID().toString(),
+    val kind: String, // KIND_IMAGE | KIND_DOCUMENT | KIND_AUDIO
+    val name: String,
+    val mimeType: String = "",
+    val sizeBytes: Long = 0,
+    /** Absolute path of the app's own copy (images, voice notes). */
+    val localPath: String? = null,
+    /** Extracted document text or audio transcript. */
+    val text: String? = null,
+    val durationMs: Long? = null,
+    val truncated: Boolean = false,
+) {
+    companion object {
+        const val KIND_IMAGE = "image"
+        const val KIND_DOCUMENT = "document"
+        const val KIND_AUDIO = "audio"
+    }
+}
+
 @Serializable
 data class StoredMessage(
     val id: String = UUID.randomUUID().toString(),
     val role: String, // "user" | "assistant"
     val content: String,
+    val attachments: List<Attachment> = emptyList(),
     val reasoning: String = "",
     val error: String? = null,
     val createdAt: Long = System.currentTimeMillis(),

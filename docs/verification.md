@@ -43,3 +43,14 @@ curl http://127.0.0.1:8787/v1/images/jobs -H "Authorization: Bearer $K" -H "Cont
 ```
 
 No GPU handy? `python dev/run_fakes.py` starts fake LM Studio and ComfyUI on the default ports.
+
+## Attachments (v0.2.0)
+
+- **Gateway:** `tests/test_attachments.py` covers image content parts passing through to LM Studio,
+  `/v1/audio/transcriptions` with the OpenAI-upstream backend (fake Whisper server), the local
+  faster-whisper backend (stubbed model: lazy load, GPU→CPU fallback), the clear `501` when
+  speech-to-text is off, and document extraction (text, DOCX, PDF without text layer, binary rejection, truncation).
+- **Core client:** `AttachmentsTest.kt` covers how messages with images/documents/voice notes are turned into
+  OpenAI messages, multipart uploads, and loading chats saved by older versions.
+- **Not tested here:** real Whisper transcription (the sandbox can't download Whisper models) and the
+  camera / photo picker / recorder on a real phone. The Android UI compiles in CI.

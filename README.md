@@ -20,15 +20,16 @@ any web app, through **one authenticated, OpenAI-compatible API**.
 
 | Folder | What it is |
 |---|---|
-| [`gateway/`](gateway) | Python (FastAPI) service. OpenAI-compatible `/v1/chat/completions` (streaming), `/v1/models`, `/v1/embeddings`, `/v1/images/generations`, plus an image **job queue** API that survives phone sleep, network drops and gateway restarts. |
-| [`android/`](android) | Kotlin + Jetpack Compose app: ChatGPT/Claude-style chat with streaming, Markdown and code blocks, model picker, reasoning ("thinking") display, chat history on the phone, image generation with workflow picker, gallery, save and share. |
+| [`gateway/`](gateway) | Python (FastAPI) service. OpenAI-compatible `/v1/chat/completions` (streaming), `/v1/models`, `/v1/embeddings`, `/v1/images/generations`, `/v1/audio/transcriptions` (local Whisper), document-to-text, plus an image **job queue** API that survives phone sleep, network drops and gateway restarts. |
+| [`android/`](android) | Kotlin + Jetpack Compose app: ChatGPT/Claude-style chat with streaming, Markdown and code blocks, model picker, reasoning ("thinking") display, **attachments (camera, photos, files, voice notes)**, chat history on the phone, image generation with workflow picker, gallery, save and share. |
 | [`docs/`](docs) | Setup and reference docs. |
 
 ## Quick start
 
 1. **PC:** install and start the gateway → [docs/setup-windows.md](docs/setup-windows.md)
 2. **Remote access:** Tailscale (recommended) or Cloudflare Tunnel → [docs/remote-access.md](docs/remote-access.md)
-3. **Phone:** install the APK and enter the URL and key → [docs/android.md](docs/android.md)
+3. **Phone:** install the APK from [Releases](../../releases/latest) and enter the URL and key → [docs/android.md](docs/android.md)
+   - Photos, files and voice notes in chat → [docs/attachments.md](docs/attachments.md)
 4. **Web apps / scripts:** call it like the OpenAI API → [docs/api.md](docs/api.md)
 5. **Your own ComfyUI workflows:** export with *Export (API)* and drop them in `gateway/workflows/` → [docs/workflows.md](docs/workflows.md)
 
@@ -43,4 +44,4 @@ any web app, through **one authenticated, OpenAI-compatible API**.
 
 See [docs/verification.md](docs/verification.md) for exactly what was tested and what still needs a real PC.
 
-Planned next: cloud GPU fallback (design in [docs/cloud-fallback.md](docs/cloud-fallback.md)), image input (vision / img2img), wake-on-LAN.
+Planned next: cloud GPU fallback (design in [docs/cloud-fallback.md](docs/cloud-fallback.md)), img2img, wake-on-LAN.

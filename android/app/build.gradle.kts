@@ -6,6 +6,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Optional fixed signing key so new APKs install over old ones (keeps chats). In CI it comes from the
+// HEARTHLIGHT_KEYSTORE_BASE64 / HEARTHLIGHT_KEYSTORE_PASSWORD repository secrets; without them the
+// Android debug key is used, which differs per machine.
+val sideloadKeystore = System.getenv("HEARTHLIGHT_KEYSTORE")?.let { file(it) }?.takeIf { it.isFile }
+
 android {
     namespace = "dev.localai.chat"
     compileSdk = 35
@@ -14,15 +19,30 @@ android {
         applicationId = "dev.localai.chat"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        if (sideloadKeystore != null) {
+            create("sideload") {
+                storeFile = sideloadKeystore
+                storePassword = System.getenv("HEARTHLIGHT_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("HEARTHLIGHT_KEY_ALIAS") ?: "hearthlight"
+                keyPassword = System.getenv("HEARTHLIGHT_KEY_PASSWORD") ?: System.getenv("HEARTHLIGHT_KEYSTORE_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
+        val signing = signingConfigs.findByName("sideload") ?: signingConfigs.getByName("debug")
+        debug {
+            signingConfig = signing
+        }
         release {
             isMinifyEnabled = false
-            // Sideload-friendly: sign release builds with the debug key unless you add your own.
-            signingConfig = signingConfigs.getByName("debug")
+            // Sideload-friendly: signed with the fixed key above, or the debug key.
+            signingConfig = signing
         }
     }
 

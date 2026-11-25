@@ -13,6 +13,11 @@ if (-not (Test-Path ".venv")) { & $python @pyArgs -m venv .venv }
 & .\.venv\Scripts\python.exe -m pip install --upgrade pip
 & .\.venv\Scripts\python.exe -m pip install -e .
 
+$audio = Read-Host "Install local speech-to-text (Whisper) so the app's voice notes work? About 100 MB plus a model download on first use. [Y/n]"
+if ($audio -notmatch '^[nN]') {
+    & .\.venv\Scripts\python.exe -m pip install -e ".[audio]"
+}
+
 if (-not (Test-Path "config.toml")) {
     Copy-Item config.example.toml config.toml
     Write-Host "Created config.toml (edit it if LM Studio/ComfyUI use non-default ports)."
